@@ -1,21 +1,26 @@
-name: Build APK
-on: [push, workflow_dispatch]
+name: Build & Publish Release APK
+
+on:
+  push:
+    tags:
+      - '*'
 
 jobs:
-  build:
-    runs-on: ubuntu-22.04
+  Gradle:
+    runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-
-      - name: Build with Buildozer
-        uses: ArtemSBulgakov/buildozer-action@v1
-        id: buildozer
-        with:
-          command: buildozer android debug
-          buildozer_version: stable
-
-      - name: Upload APK
-        uses: actions/upload-artifact@v4
-        with:
-          name: dialer-apk
-          path: ${{ steps.buildozer.outputs.filename }}
+    - name: checkout code
+      uses: actions/checkout@v2
+    - name: setup jdk
+      uses: actions/setup-java@v1
+      with:
+        java-version: 11
+    - name: Make Gradle executable
+      run: chmod +x ./gradlew
+    - name: Build Release APK
+      run: ./gradlew assembleRelease
+    - name: Releasing using Hub
+      uses: sangatdesai/release-apk@main
+      env:
+       GITHUB_TOKEN: ${{ secrets.TOKEN }}
+       APP_FOLDER: app
